@@ -6,6 +6,7 @@ using Service;
 using Service.IdGenerators;
 using Service.Storages;
 using System.Configuration;
+using UserServiceTester.CustomSections;
 
 namespace UserServiceTester
 {
@@ -28,6 +29,14 @@ namespace UserServiceTester
         static void Main(string[] args)
         {
             var serverStatePath = ConfigurationManager.AppSettings["serverStatePathFile"];
+
+            var masterSlaveConfig = MasterSlavesConfig.GetConfig();
+            foreach (Slave slave in masterSlaveConfig.Slaves)
+            {
+                Console.WriteLine(slave.Ip + " " + slave.Port);
+            }
+
+            Console.WriteLine(masterSlaveConfig.Master.Ip + " " + masterSlaveConfig.Master.Port);
 
             XmlWriterSettings settings = new XmlWriterSettings
             {
