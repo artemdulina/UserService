@@ -48,6 +48,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CustomSections\Master.cs" />
+    <Compile Include="CustomSections\MasterSlavesConfig.cs" />
+    <Compile Include="CustomSections\Slave.cs" />
+    <Compile Include="CustomSections\Slaves.cs" />
     <Compile Include="Exceptions\ValidationException.cs" />
     <Compile Include="IdGenerators\DefaultIdGenerator.cs" />
     <Compile Include="Interfaces\IIdGenerator.cs" />

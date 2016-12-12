@@ -8,13 +8,13 @@ using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Service.CustomSections;
 
 namespace Service
 {
@@ -25,12 +25,12 @@ namespace Service
         private Task ListnerTask { get; set; }
         private CancellationTokenSource TokenSource { get; set; }
         private CancellationToken CancelToken { get; set; }
-        private int port = 11000;
+        private int port;
+        private IPAddress ip;
 
-        public MasterUserService(IUserStorage userStorage)
+        public MasterUserService(IUserStorage userStorage) : this(userStorage, new DefaultIdGenerator())
         {
-            this.userStorage = userStorage;
-            idGenerator = new DefaultIdGenerator();
+
         }
 
         public MasterUserService(IUserStorage userStorage, IIdGenerator idGenerator)
@@ -38,6 +38,15 @@ namespace Service
             this.userStorage = userStorage;
             this.idGenerator = idGenerator;
             idGenerator.SetCurrentId(GetId());
+            SetSettingsFromConfig();
+        }
+
+        private void SetSettingsFromConfig()
+        {
+            var masterSlaveConfig = MasterSlavesConfig.GetConfig();
+
+            ip = IPAddress.Parse(masterSlaveConfig.Master.Ip);
+            port = int.Parse(masterSlaveConfig.Master.Port);
         }
 
         public void Add(User user, AbstractValidator<User> validator)
@@ -127,10 +136,10 @@ namespace Service
             // Устанавливаем для сокета локальную конечную точку
             IPHostEntry ipHost = Dns.GetHostEntry("localhost");
             IPAddress ipAddr = ipHost.AddressList[0];
-            IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, port);
+            IPEndPoint ipEndPoint = new IPEndPoint(ip, port);
 
             // Создаем сокет Tcp/Ip
-            Socket sListener = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket sListener = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             // Назначаем сокет локальной конечной точке и слушаем входящие сокеты
             try
@@ -155,7 +164,7 @@ namespace Service
                         data += Encoding.UTF8.GetString(bytes, 0, bytesRec);
 
                         // Показываем данные на консоли
-                        Message received = null;
+                        Message received;
                         using (MemoryStream stream = new MemoryStream(bytes))
                         {
                             try
