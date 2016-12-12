@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<users>
+  <user>
+    <id>57</id>
+    <firstname>artem</firstname>
+    <lastname>one</lastname>
+    <birthday>2016-12-01T00:00:00+03:00</birthday>
+    <visarecords>
+      <visarecord>
+        <country>Belarus</country>
+        <start>2016-12-01T14:52:59.8125436+03:00</start>
+        <end>2016-12-01T14:52:59.8125436+03:00</end>
+      </visarecord>
+      <visarecord>
+        <country>Usa</country>
+        <start>2016-12-01T14:52:59.8135437+03:00</start>
+        <end>2016-12-01T14:52:59.8135437+03:00</end>
+      </visarecord>
+    </visarecords>
+  </user>
+  <user>
+    <id>58</id>
+    <firstname>dazzle</firstname>
+    <lastname>two</lastname>
+    <birthday>2016-12-01T00:00:00+03:00</birthday>
+    <visarecords />
+  </user>
+</users>
