@@ -18,6 +18,7 @@ namespace Service
         public Command Type { get; set; }
         public User User { get; set; }
         public IPEndPoint IpEndPoint { get; set; }
+        public Func<User, bool> Criteria { get; set; }
 
         public override string ToString()
         {

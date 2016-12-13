@@ -6,11 +6,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using FluentValidation;
 using Service.CustomSections;
 using Service.Interfaces;
 
@@ -23,6 +21,7 @@ namespace Service
         private CancellationTokenSource TokenSource { get; set; }
         private CancellationToken CancelToken { get; set; }
         private IPEndPoint MasterIpEndPoint { get; set; }
+        private IPEndPoint ipEndPoint;
 
         public SlaveUserService(IUserStorage userStorage)
         {
@@ -31,32 +30,118 @@ namespace Service
 
         private void SetSettingsFromConfig()
         {
-            var masterSlaveConfig = MasterSlavesConfig.GetConfig();
+            MasterSlavesConfig masterSlaveConfig = MasterSlavesConfig.GetConfig();
 
             IPAddress ip = IPAddress.Parse(masterSlaveConfig.Master.Ip);
             int port = int.Parse(masterSlaveConfig.Master.Port);
             MasterIpEndPoint = new IPEndPoint(ip, port);
         }
 
+        private Message SendMessageToMaster(Message message)
+        {
+            Socket sender = new Socket(MasterIpEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            Message received = null;
+            try
+            {
+                sender.Connect(MasterIpEndPoint);
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    try
+                    {
+                        BinaryFormatter formatter = new BinaryFormatter();
+
+                        formatter.Serialize(stream, message);
+
+                        sender.Send(stream.ToArray());
+
+                        byte[] bytes = new byte[10000];
+                        int bytesRec = sender.Receive(bytes);
+
+                        using (MemoryStream receivedStream = new MemoryStream(bytes))
+                        {
+                            received = (Message)formatter.Deserialize(receivedStream);
+                        }
+
+                    }
+                    catch (SerializationException e)
+                    {
+                        Console.WriteLine("Failed to serialize. Reason: " + e.Message);
+                        throw;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+            }
+            finally
+            {
+                sender.Shutdown(SocketShutdown.Both);
+                sender.Close();
+            }
+
+            return message;
+        }
+
+        public User Search(Func<User, bool> criteria)
+        {
+            if (criteria == null)
+            {
+                throw new ArgumentNullException(nameof(criteria));
+            }
+            User found = userStorage.Search(criteria);
+
+            Message answer = null;
+            if (found == null)
+            {
+                answer = SendMessageToMaster(new Message()
+                {
+                    Type = Command.Search,
+                    Criteria = criteria
+                });
+            }
+
+            if (answer?.User != null)
+            {
+                found = answer.User;
+            }
+
+            return found;
+        }
+
         private void SendCreationMessage()
         {
             Socket sender = new Socket(MasterIpEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            using (MemoryStream stream = new MemoryStream())
+            try
             {
-                try
+                sender.Connect(MasterIpEndPoint);
+                using (MemoryStream stream = new MemoryStream())
                 {
-                    BinaryFormatter formatter = new BinaryFormatter();
+                    try
+                    {
+                        BinaryFormatter formatter = new BinaryFormatter();
 
-                    formatter.Serialize(stream, new Message().Type = Command.SlaveCreated);
+                        formatter.Serialize(stream, new Message() { Type = Command.SlaveCreated});
 
-                    sender.Send(stream.ToArray());
+                        sender.Send(stream.ToArray());
+                    }
+                    catch (SerializationException e)
+                    {
+                        Console.WriteLine("Failed to serialize. Reason: " + e.Message);
+                        throw;
+                    }
                 }
-                catch (SerializationException e)
-                {
-                    Console.WriteLine("Failed to deserialize. Reason: " + e.Message);
-                    throw;
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+            }
+            finally
+            {
+                sender.Shutdown(SocketShutdown.Both);
+                sender.Close();
             }
 
         }
@@ -90,17 +175,7 @@ namespace Service
             }
         }
 
-        public User Search(Func<User, bool> criteria)
-        {
-            if (criteria == null)
-            {
-                throw new ArgumentNullException(nameof(criteria));
-            }
-
-            return userStorage.Search(criteria);
-        }
-
-        private void Add(User user, IValidator<User> validator)
+        private void Add(User user)
         {
             userStorage.Add(user);
         }
@@ -133,32 +208,23 @@ namespace Service
 
         private void ListenerFunction()
         {
-            // Устанавливаем для сокета локальную конечную точку
-
             // Создаем сокет Tcp/Ip
-            Socket sListener = new Socket(MasterIpEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket sListener = new Socket(MasterIpEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            // Назначаем сокет локальной конечной точке и слушаем входящие сокеты
             try
             {
                 sListener.Bind(MasterIpEndPoint);
                 sListener.Listen(10);
 
-                // Начинаем слушать соединения
                 while (true)
                 {
                     // Программа приостанавливается, ожидая входящее соединение
                     Socket handler = sListener.Accept();
                     try
                     {
-                        string data = null;
-
                         // Мы дождались клиента, пытающегося с нами соединиться
-
-                        byte[] bytes = new byte[1024];
+                        byte[] bytes = new byte[10000];
                         int bytesRec = handler.Receive(bytes);
-
-                        data += Encoding.UTF8.GetString(bytes, 0, bytesRec);
 
                         // Показываем данные на консоли
                         Message received = null;
@@ -170,22 +236,27 @@ namespace Service
 
                                 received = (Message)formatter.Deserialize(stream);
 
-                                Console.WriteLine(received.ToString());
+                                switch (received.Type)
+                                {
+                                    case Command.Add:
+                                        userStorage.Add(received.User);
+                                        break;
+                                    case Command.DeleteById:
+                                        userStorage.Delete(received.User.Id);
+                                        break;
+                                    case Command.DeleteByUser:
+                                        userStorage.Delete(received.User);
+                                        break;
+                                    default:
+                                        Console.WriteLine("Not supported command: " + received.Type);
+                                        break;
+                                }
                             }
                             catch (SerializationException e)
                             {
                                 Console.WriteLine("Failed to deserialize. Reason: " + e.Message);
                                 throw;
                             }
-                        }
-
-                        // Отправляем ответ клиенту
-                        //byte[] msg = Encoding.UTF8.GetBytes(received.ToString());
-                        //handler.Send(msg);
-
-                        if (data.IndexOf("<TheEnd>", StringComparison.Ordinal) > -1)
-                        {
-                            break;
                         }
                     }
                     finally

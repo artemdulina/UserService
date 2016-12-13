@@ -10,7 +10,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -43,7 +42,7 @@ namespace Service
 
         private void SetSettingsFromConfig()
         {
-            var masterSlaveConfig = MasterSlavesConfig.GetConfig();
+            MasterSlavesConfig masterSlaveConfig = MasterSlavesConfig.GetConfig();
 
             IPAddress ip = IPAddress.Parse(masterSlaveConfig.Master.Ip);
             int port = int.Parse(masterSlaveConfig.Master.Port);
@@ -134,8 +133,6 @@ namespace Service
 
         private void ListenerFunction()
         {
-            // Устанавливаем для сокета локальную конечную точку
-
             // Создаем сокет Tcp/Ip
             Socket sListener = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -152,15 +149,10 @@ namespace Service
                     Socket handler = sListener.Accept();
                     try
                     {
-                        string data = "str";
-
-                        // Мы дождались клиента, пытающегося с нами соединиться
-
                         byte[] bytes = new byte[10000];
                         int bytesRec = handler.Receive(bytes);
-                        Console.WriteLine(handler.ReceiveBufferSize);
+                        //Console.WriteLine(handler.ReceiveBufferSize);
 
-                        // Показываем данные на консоли
                         using (MemoryStream stream = new MemoryStream(bytes))
                         {
                             try
@@ -174,21 +166,25 @@ namespace Service
                                     slavesIpEndPoints.Add(received.IpEndPoint);
                                     Console.WriteLine("slave " + received.IpEndPoint.Address + ":" + received.IpEndPoint.Port + " was created");
                                 }
+                                else if (received.Type == Command.Search)
+                                {
+                                    User found = userStorage.Search(received.Criteria);
+
+                                    Message msgToSend = new Message()
+                                    {
+                                        User = found,
+                                        Type = Command.Search
+                                    };
+
+                                    formatter.Serialize(stream, msgToSend);
+                                    handler.Send(stream.ToArray());
+                                }
                             }
                             catch (SerializationException e)
                             {
-                                Console.WriteLine("Failed to deserialize in Master. Reason: " + e.StackTrace);
+                                Console.WriteLine("Serialization failed in Master. Reason: " + e.StackTrace);
                                 throw;
                             }
-                        }
-
-                        // Отправляем ответ клиенту
-                        //byte[] msg = Encoding.UTF8.GetBytes(received.ToString());
-                        //handler.Send(msg);
-
-                        if (data.IndexOf("<TheEnd>", StringComparison.Ordinal) > -1)
-                        {
-                            break;
                         }
                     }
                     finally
