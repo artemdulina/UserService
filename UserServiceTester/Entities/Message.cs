@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace Service
+namespace Entities
 {
     public enum Command
     {

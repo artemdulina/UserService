@@ -1,19 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+using Entities;
 using Service;
-using Service.CustomSections;
-using Service.IdGenerators;
 using Service.Storages;
 
 namespace SlaveUserServiceLauncher
 {
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
@@ -25,9 +17,12 @@ namespace SlaveUserServiceLauncher
 
             //Console.WriteLine(masterSlaveConfig.Slaves[0].Port);
             //Console.WriteLine(masterSlaveConfig.Slaves[1].Port);
+            //Func<User, bool> criteria = user => user.Id == 2;
+            //Func<User, bool> criteria = delegate(User user) { return user.Id == 58; };
+            //Console.WriteLine(criteria.Method.ToString());
+            //Console.WriteLine(criteria.Target);
 
-            bool stop = false;
-            while (!stop)
+            while (true)
             {
                 Console.WriteLine("Write command:");
                 string command = Console.ReadLine();
@@ -36,8 +31,8 @@ namespace SlaveUserServiceLauncher
                     case "stop":
                         slave.OnStop();
                         break;
-                    case "exit":
-                        stop = true;
+                    case "search":
+                        Console.WriteLine(slave.Search(Criterias.ConcreteId));
                         break;
                     default:
                         Console.WriteLine("Wrong command");

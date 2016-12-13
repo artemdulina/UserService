@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Service
+namespace Entities
 {
     [Serializable]
     public class User : IEqualityComparer<User>, IEquatable<User>

@@ -9,10 +9,12 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Entities;
 using Service.CustomSections;
 
 namespace Service
@@ -134,12 +136,12 @@ namespace Service
         private void ListenerFunction()
         {
             Socket sListener = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            
+
             try
             {
                 sListener.Bind(ipEndPoint);
                 sListener.Listen(10);
-                
+
                 while (true)
                 {
                     Socket handler = sListener.Accept();
@@ -147,16 +149,17 @@ namespace Service
                     {
                         byte[] bytes = new byte[10000];
                         int bytesRec = handler.Receive(bytes);
-                        //Console.WriteLine(handler.ReceiveBufferSize);
+                        //Console.WriteLine(bytesRec);
 
                         using (MemoryStream stream = new MemoryStream(bytes))
                         {
                             try
                             {
                                 BinaryFormatter formatter = new BinaryFormatter();
-
+                                //formatter.Binder = new AllAssemblyVersionsDeserializationBinder();
+                                formatter.AssemblyFormat = FormatterAssemblyStyle.Simple;
                                 Message received = (Message)formatter.Deserialize(stream);
-                                //Console.WriteLine(received);
+                                //Console.WriteLine("'''''''''''''''''''''''''''''''''''");
 
                                 if (received.Type == Command.SlaveCreated)
                                 {
@@ -166,6 +169,7 @@ namespace Service
                                 else if (received.Type == Command.Search)
                                 {
                                     User found = userStorage.Search(received.Criteria);
+                                    //Console.WriteLine(found);
 
                                     Message msgToSend = new Message()
                                     {
@@ -173,13 +177,17 @@ namespace Service
                                         Type = Command.Search
                                     };
 
-                                    formatter.Serialize(stream, msgToSend);
-                                    handler.Send(stream.ToArray());
+                                    using (MemoryStream streamSend = new MemoryStream())
+                                    {
+                                        formatter.Serialize(streamSend, msgToSend);
+                                        handler.Send(streamSend.ToArray());
+                                    }
+                                    Console.WriteLine("One of the slaves requested user search");
                                 }
                             }
                             catch (SerializationException e)
                             {
-                                Console.WriteLine("Serialization failed in Master. Reason: " + e.StackTrace);
+                                Console.WriteLine("Serialization failed in Master. Reason: " + e.Message);
                                 throw;
                             }
                         }

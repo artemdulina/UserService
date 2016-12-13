@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Text;
 using System.Xml;
-using System.Xml.Linq;
 using Service;
 using Service.IdGenerators;
 using Service.Storages;
-using System.Configuration;
 
 namespace UserServiceTester
 {
@@ -29,8 +27,7 @@ namespace UserServiceTester
             storage.Add(new User("ivan", "three", DateTime.Today), new CustomValidation());
             storage.Add(new User("dmitry", "four", DateTime.Today), new CustomValidation());*/
 
-            bool stop = false;
-            while (!stop)
+            while (true)
             {
                 Console.WriteLine("Write command:");
                 string command = Console.ReadLine();
@@ -41,9 +38,6 @@ namespace UserServiceTester
                         break;
                     case "stop":
                         master.OnStop();
-                        break;
-                    case "exit":
-                        stop = true;
                         break;
                     default:
                         Console.WriteLine("Wrong command");

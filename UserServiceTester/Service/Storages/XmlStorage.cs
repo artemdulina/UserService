@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using Entities;
 using Service.Interfaces;
 
 namespace Service.Storages

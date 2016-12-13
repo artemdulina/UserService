@@ -9,6 +9,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Entities;
 using Service.CustomSections;
 using Service.Interfaces;
 
@@ -63,12 +64,15 @@ namespace Service
                     {
                         BinaryFormatter formatter = new BinaryFormatter();
 
+                        //Console.WriteLine("start serialize");
                         formatter.Serialize(stream, message);
+                        //Console.WriteLine("end serialize");
 
                         sender.Send(stream.ToArray());
 
                         byte[] bytes = new byte[10000];
                         int bytesRec = sender.Receive(bytes);
+                        //Console.WriteLine(bytesRec);
 
                         using (MemoryStream receivedStream = new MemoryStream(bytes))
                         {
@@ -93,11 +97,13 @@ namespace Service
                 sender.Close();
             }
 
-            return message;
+            return received;
         }
 
         public User Search(Func<User, bool> criteria)
         {
+            //Console.WriteLine(criteria.Method.ToString());
+            //Console.WriteLine(criteria.Target);
             if (criteria == null)
             {
                 throw new ArgumentNullException(nameof(criteria));
@@ -117,6 +123,7 @@ namespace Service
             if (answer?.User != null)
             {
                 found = answer.User;
+                userStorage.Add(found);
             }
 
             return found;
@@ -241,7 +248,7 @@ namespace Service
                         {
                             continue;
                         }
-                        
+
                         Message received = null;
                         using (MemoryStream stream = new MemoryStream(bytes))
                         {

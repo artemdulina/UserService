@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Entities;
+using FluentValidation;
 
 namespace Service.Validations
 {
