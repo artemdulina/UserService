@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net;
 
 namespace Service
 {
@@ -20,10 +17,11 @@ namespace Service
     {
         public Command Type { get; set; }
         public User User { get; set; }
+        public IPEndPoint IpEndPoint { get; set; }
 
         public override string ToString()
         {
-            return $"Type is: {Type}, User is: {User}";
+            return $"Type is: {Type}, User is: {User}, IpEndPointIs: {IpEndPoint}";
         }
     }
 }

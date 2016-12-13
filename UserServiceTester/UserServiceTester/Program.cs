@@ -31,16 +31,6 @@ namespace UserServiceTester
         {
             var serverStatePath = ConfigurationManager.AppSettings["serverStatePathFile"];
 
-            var masterSlaveConfig = MasterSlavesConfig.GetConfig();
-            /*foreach (Slave slave in masterSlaveConfig.Slaves)
-            {
-                Console.WriteLine(slave.Ip + " " + slave.Port);
-            }*/
-
-            IPAddress ipAddress = IPAddress.Parse(masterSlaveConfig.Master.Ip);
-            int port = int.Parse(masterSlaveConfig.Master.Port);
-            Console.WriteLine(ipAddress + ":" + port);
-
             XmlWriterSettings settings = new XmlWriterSettings
             {
                 Encoding = Encoding.UTF8,

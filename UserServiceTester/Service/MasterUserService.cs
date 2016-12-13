@@ -25,8 +25,8 @@ namespace Service
         private Task ListnerTask { get; set; }
         private CancellationTokenSource TokenSource { get; set; }
         private CancellationToken CancelToken { get; set; }
-        private int port;
-        private IPAddress ip;
+        private IPEndPoint ipEndPoint;
+        private List<IPEndPoint> slavesIpEndPoints = new List<IPEndPoint>();
 
         public MasterUserService(IUserStorage userStorage) : this(userStorage, new DefaultIdGenerator())
         {
@@ -45,8 +45,9 @@ namespace Service
         {
             var masterSlaveConfig = MasterSlavesConfig.GetConfig();
 
-            ip = IPAddress.Parse(masterSlaveConfig.Master.Ip);
-            port = int.Parse(masterSlaveConfig.Master.Port);
+            IPAddress ip = IPAddress.Parse(masterSlaveConfig.Master.Ip);
+            int port = int.Parse(masterSlaveConfig.Master.Port);
+            ipEndPoint = new IPEndPoint(ip, port);
         }
 
         public void Add(User user, AbstractValidator<User> validator)
@@ -114,7 +115,7 @@ namespace Service
             }
             catch (Exception exception)
             {
-
+                Console.WriteLine(exception.Message);
             }
         }
 
@@ -127,19 +128,16 @@ namespace Service
             }
             catch (Exception exception)
             {
-
+                Console.WriteLine(exception.Message);
             }
         }
 
         private void ListenerFunction()
         {
             // Устанавливаем для сокета локальную конечную точку
-            IPHostEntry ipHost = Dns.GetHostEntry("localhost");
-            IPAddress ipAddr = ipHost.AddressList[0];
-            IPEndPoint ipEndPoint = new IPEndPoint(ip, port);
 
             // Создаем сокет Tcp/Ip
-            Socket sListener = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket sListener = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             // Назначаем сокет локальной конечной точке и слушаем входящие сокеты
             try
@@ -154,30 +152,32 @@ namespace Service
                     Socket handler = sListener.Accept();
                     try
                     {
-                        string data = null;
+                        string data = "str";
 
                         // Мы дождались клиента, пытающегося с нами соединиться
 
-                        byte[] bytes = new byte[1024];
+                        byte[] bytes = new byte[10000];
                         int bytesRec = handler.Receive(bytes);
-
-                        data += Encoding.UTF8.GetString(bytes, 0, bytesRec);
+                        Console.WriteLine(handler.ReceiveBufferSize);
 
                         // Показываем данные на консоли
-                        Message received;
                         using (MemoryStream stream = new MemoryStream(bytes))
                         {
                             try
                             {
                                 BinaryFormatter formatter = new BinaryFormatter();
 
-                                received = (Message)formatter.Deserialize(stream);
+                                Message received = (Message)formatter.Deserialize(stream);
 
-                                Console.WriteLine(received.ToString());
+                                if (received.Type == Command.SlaveCreated)
+                                {
+                                    slavesIpEndPoints.Add(received.IpEndPoint);
+                                    Console.WriteLine("slave " + received.IpEndPoint.Address + ":" + received.IpEndPoint.Port + " was created");
+                                }
                             }
                             catch (SerializationException e)
                             {
-                                Console.WriteLine("Failed to deserialize. Reason: " + e.Message);
+                                Console.WriteLine("Failed to deserialize in Master. Reason: " + e.StackTrace);
                                 throw;
                             }
                         }
@@ -200,7 +200,7 @@ namespace Service
             }
             catch (Exception exception)
             {
-                //Logger.Error(exception);
+                Console.WriteLine(exception.Message);
             }
             finally
             {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
@@ -12,8 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using FluentValidation;
-using FluentValidation.Results;
-using Service.IdGenerators;
+using Service.CustomSections;
 using Service.Interfaces;
 
 namespace Service
@@ -24,22 +22,25 @@ namespace Service
         private Task ListnerTask { get; set; }
         private CancellationTokenSource TokenSource { get; set; }
         private CancellationToken CancelToken { get; set; }
-        private int MasterPort { get; }
+        private IPEndPoint MasterIpEndPoint { get; set; }
 
-        public SlaveUserService(IUserStorage userStorage, int masterPort)
+        public SlaveUserService(IUserStorage userStorage)
         {
             this.userStorage = userStorage;
-            MasterPort = masterPort;
-            //SendCreationMessage();
         }
 
-        private void SendMessage()
+        private void SetSettingsFromConfig()
         {
-            IPHostEntry ipHost = Dns.GetHostEntry("localhost");
-            IPAddress ipAddr = ipHost.AddressList[0];
-            IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, MasterPort);
+            var masterSlaveConfig = MasterSlavesConfig.GetConfig();
 
-            Socket sender = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            IPAddress ip = IPAddress.Parse(masterSlaveConfig.Master.Ip);
+            int port = int.Parse(masterSlaveConfig.Master.Port);
+            MasterIpEndPoint = new IPEndPoint(ip, port);
+        }
+
+        private void SendCreationMessage()
+        {
+            Socket sender = new Socket(MasterIpEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             using (MemoryStream stream = new MemoryStream())
             {
@@ -68,10 +69,11 @@ namespace Service
                 CancelToken = TokenSource.Token;
                 Task.Factory.StartNew(ListenerFunction, CancelToken);
                 Console.WriteLine("Master succesfully started");
+                SendCreationMessage();
             }
             catch (Exception exception)
             {
-
+                Console.WriteLine(exception.Message);
             }
         }
 
@@ -84,7 +86,7 @@ namespace Service
             }
             catch (Exception exception)
             {
-
+                Console.WriteLine(exception.Message);
             }
         }
 
@@ -132,17 +134,14 @@ namespace Service
         private void ListenerFunction()
         {
             // Устанавливаем для сокета локальную конечную точку
-            IPHostEntry ipHost = Dns.GetHostEntry("localhost");
-            IPAddress ipAddr = ipHost.AddressList[0];
-            IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, MasterPort);
 
             // Создаем сокет Tcp/Ip
-            Socket sListener = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket sListener = new Socket(MasterIpEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             // Назначаем сокет локальной конечной точке и слушаем входящие сокеты
             try
             {
-                sListener.Bind(ipEndPoint);
+                sListener.Bind(MasterIpEndPoint);
                 sListener.Listen(10);
 
                 // Начинаем слушать соединения
@@ -199,6 +198,7 @@ namespace Service
             catch (Exception exception)
             {
                 //Logger.Error(exception);
+                Console.WriteLine(exception.Message);
             }
             finally
             {
