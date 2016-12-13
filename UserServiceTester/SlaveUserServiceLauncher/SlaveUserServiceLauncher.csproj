@@ -4,15 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D112BB01-C36B-4D50-A5D4-1E603F2280FC}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{C4417112-0A0C-4F73-8A15-57ABCA826053}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Service</RootNamespace>
-    <AssemblyName>Service</AssemblyName>
+    <RootNamespace>SlaveUserServiceLauncher</RootNamespace>
+    <AssemblyName>SlaveUserServiceLauncher</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,6 +24,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -29,14 +32,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FluentValidation, Version=6.2.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FluentValidation.6.2.1.0\lib\Net45\FluentValidation.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -48,29 +44,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomSections\Master.cs" />
-    <Compile Include="CustomSections\MasterSlavesConfig.cs" />
-    <Compile Include="CustomSections\Slave.cs" />
-    <Compile Include="CustomSections\Slaves.cs" />
-    <Compile Include="Exceptions\ValidationException.cs" />
-    <Compile Include="IdGenerators\DefaultIdGenerator.cs" />
-    <Compile Include="Interfaces\IIdGenerator.cs" />
-    <Compile Include="Interfaces\IMasterService.cs" />
-    <Compile Include="Interfaces\ISlaveService.cs" />
-    <Compile Include="Interfaces\IUserStorage.cs" />
-    <Compile Include="Message.cs" />
-    <Compile Include="NetworkHelper.cs" />
-    <Compile Include="SlaveUserService.cs" />
-    <Compile Include="Storages\ListStorage.cs" />
-    <Compile Include="Storages\XmlStorage.cs" />
-    <Compile Include="User.cs" />
-    <Compile Include="MasterUserService.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Validations\CustomValidation.cs" />
-    <Compile Include="Visa.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="..\UserServiceTester\App.config">
+      <Link>App.config</Link>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Service\Service.csproj">
+      <Project>{d112bb01-c36b-4d50-a5d4-1e603f2280fc}</Project>
+      <Name>Service</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

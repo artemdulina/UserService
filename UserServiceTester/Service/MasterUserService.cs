@@ -110,7 +110,7 @@ namespace Service
                 TokenSource = new CancellationTokenSource();
                 CancelToken = TokenSource.Token;
                 Task.Factory.StartNew(ListenerFunction, CancelToken);
-                Console.WriteLine("Master succesfully started");
+                Console.WriteLine("Master succesfully started on: " + ipEndPoint.Address + ":" + ipEndPoint.Port);
             }
             catch (Exception exception)
             {
@@ -133,19 +133,15 @@ namespace Service
 
         private void ListenerFunction()
         {
-            // Создаем сокет Tcp/Ip
             Socket sListener = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            // Назначаем сокет локальной конечной точке и слушаем входящие сокеты
+            
             try
             {
                 sListener.Bind(ipEndPoint);
                 sListener.Listen(10);
-
-                // Начинаем слушать соединения
+                
                 while (true)
                 {
-                    // Программа приостанавливается, ожидая входящее соединение
                     Socket handler = sListener.Accept();
                     try
                     {
@@ -160,6 +156,7 @@ namespace Service
                                 BinaryFormatter formatter = new BinaryFormatter();
 
                                 Message received = (Message)formatter.Deserialize(stream);
+                                //Console.WriteLine(received);
 
                                 if (received.Type == Command.SlaveCreated)
                                 {

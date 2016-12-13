@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterSlaveService", "Maste
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterServiceClient", "MasterServiceClient\MasterServiceClient.csproj", "{36E36AF7-7812-41FF-98AA-634629889E06}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlaveUserServiceLauncher", "SlaveUserServiceLauncher\SlaveUserServiceLauncher.csproj", "{C4417112-0A0C-4F73-8A15-57ABCA826053}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{36E36AF7-7812-41FF-98AA-634629889E06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36E36AF7-7812-41FF-98AA-634629889E06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36E36AF7-7812-41FF-98AA-634629889E06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4417112-0A0C-4F73-8A15-57ABCA826053}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4417112-0A0C-4F73-8A15-57ABCA826053}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4417112-0A0C-4F73-8A15-57ABCA826053}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4417112-0A0C-4F73-8A15-57ABCA826053}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

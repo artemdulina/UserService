@@ -26,20 +26,32 @@ namespace Service
         public SlaveUserService(IUserStorage userStorage)
         {
             this.userStorage = userStorage;
+            SetSettingsFromConfig();
         }
 
         private void SetSettingsFromConfig()
         {
             MasterSlavesConfig masterSlaveConfig = MasterSlavesConfig.GetConfig();
 
-            IPAddress ip = IPAddress.Parse(masterSlaveConfig.Master.Ip);
-            int port = int.Parse(masterSlaveConfig.Master.Port);
-            MasterIpEndPoint = new IPEndPoint(ip, port);
+            IPAddress ipMaster = IPAddress.Parse(masterSlaveConfig.Master.Ip);
+            int portMaster = int.Parse(masterSlaveConfig.Master.Port);
+            MasterIpEndPoint = new IPEndPoint(ipMaster, portMaster);
+
+            foreach (Slave slave in masterSlaveConfig.Slaves)
+            {
+                IPAddress ipSlave = IPAddress.Parse(slave.Ip);
+                int portSlave = int.Parse(slave.Port);
+                if (!NetworkHelper.IsPortOpened(ipSlave, portSlave))
+                {
+                    ipEndPoint = new IPEndPoint(ipSlave, portSlave);
+                    break;
+                }
+            }
         }
 
         private Message SendMessageToMaster(Message message)
         {
-            Socket sender = new Socket(MasterIpEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket sender = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             Message received = null;
             try
@@ -112,7 +124,7 @@ namespace Service
 
         private void SendCreationMessage()
         {
-            Socket sender = new Socket(MasterIpEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket sender = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             try
             {
@@ -123,7 +135,11 @@ namespace Service
                     {
                         BinaryFormatter formatter = new BinaryFormatter();
 
-                        formatter.Serialize(stream, new Message() { Type = Command.SlaveCreated});
+                        formatter.Serialize(stream, new Message()
+                        {
+                            Type = Command.SlaveCreated,
+                            IpEndPoint = ipEndPoint
+                        });
 
                         sender.Send(stream.ToArray());
                     }
@@ -143,7 +159,6 @@ namespace Service
                 sender.Shutdown(SocketShutdown.Both);
                 sender.Close();
             }
-
         }
 
         public void OnStart()
@@ -153,7 +168,7 @@ namespace Service
                 TokenSource = new CancellationTokenSource();
                 CancelToken = TokenSource.Token;
                 Task.Factory.StartNew(ListenerFunction, CancelToken);
-                Console.WriteLine("Master succesfully started");
+                Console.WriteLine("Slave succesfully started on: " + ipEndPoint.Address + ":" + ipEndPoint.Port);
                 SendCreationMessage();
             }
             catch (Exception exception)
@@ -167,7 +182,7 @@ namespace Service
             try
             {
                 TokenSource.Cancel();
-                Console.WriteLine("Master succesfully stopped");
+                Console.WriteLine("Slave succesfully stopped");
             }
             catch (Exception exception)
             {
@@ -208,25 +223,25 @@ namespace Service
 
         private void ListenerFunction()
         {
-            // Создаем сокет Tcp/Ip
-            Socket sListener = new Socket(MasterIpEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket sListener = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             try
             {
-                sListener.Bind(MasterIpEndPoint);
+                sListener.Bind(ipEndPoint);
                 sListener.Listen(10);
 
                 while (true)
                 {
-                    // Программа приостанавливается, ожидая входящее соединение
                     Socket handler = sListener.Accept();
                     try
                     {
-                        // Мы дождались клиента, пытающегося с нами соединиться
                         byte[] bytes = new byte[10000];
                         int bytesRec = handler.Receive(bytes);
-
-                        // Показываем данные на консоли
+                        if (bytesRec == 0)
+                        {
+                            continue;
+                        }
+                        
                         Message received = null;
                         using (MemoryStream stream = new MemoryStream(bytes))
                         {
@@ -254,7 +269,7 @@ namespace Service
                             }
                             catch (SerializationException e)
                             {
-                                Console.WriteLine("Failed to deserialize. Reason: " + e.Message);
+                                Console.WriteLine("Failed to deserialize. Reason: " + e.StackTrace);
                                 throw;
                             }
                         }

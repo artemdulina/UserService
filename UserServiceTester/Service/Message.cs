@@ -22,7 +22,7 @@ namespace Service
 
         public override string ToString()
         {
-            return $"Type is: {Type}, User is: {User}, IpEndPointIs: {IpEndPoint}";
+            return $"Type is: {Type}, User is: {User}, IpEndPoint is: {IpEndPoint}";
         }
     }
 }

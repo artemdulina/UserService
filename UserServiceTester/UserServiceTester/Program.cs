@@ -19,8 +19,8 @@ namespace UserServiceTester
                 Indent = true
             };
 
-            MasterUserService storage = new MasterUserService(new XmlStorage("users.xml", settings), new DefaultIdGenerator());
-
+            MasterUserService master = new MasterUserService(new XmlStorage("users.xml", settings), new DefaultIdGenerator());
+            master.OnStart();
             /*User a = new User("artem", "one", DateTime.Today);
             a.VisaRecords.Add(new Visa() { Country = "Belarus", End = DateTime.Now, Start = DateTime.Now });
             a.VisaRecords.Add(new Visa() { Country = "Usa", End = DateTime.Now, Start = DateTime.Now });
@@ -36,13 +36,11 @@ namespace UserServiceTester
                 string command = Console.ReadLine();
                 switch (command)
                 {
-                    case "start":
-                        break;
                     case "savestate":
-                        storage.SaveState();
+                        master.SaveState();
                         break;
                     case "stop":
-                        storage.OnStop();
+                        master.OnStop();
                         break;
                     case "exit":
                         stop = true;
