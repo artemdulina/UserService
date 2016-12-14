@@ -67,16 +67,34 @@ namespace Service
 
             user.Id = idGenerator.GenerateNext();
             userStorage.Add(user);
+
+            SendNotificationToAllSlaves(new Message()
+            {
+                Type = Command.Add,
+                User = user
+            });
         }
 
         public void Delete(int id)
         {
             userStorage.Delete(id);
+
+            SendNotificationToAllSlaves(new Message()
+            {
+                Type = Command.DeleteById,
+                User = new User { Id = id }
+            });
         }
 
         public void Delete(User user)
         {
             userStorage.Delete(user);
+
+            SendNotificationToAllSlaves(new Message()
+            {
+                Type = Command.DeleteByUser,
+                User = user
+            });
         }
 
         public User Search(Func<User, bool> criteria)
@@ -92,6 +110,35 @@ namespace Service
         public IEnumerable<User> GetAll()
         {
             return userStorage.GetAll();
+        }
+
+        private void SendNotificationToAllSlaves(Message message)
+        {
+
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                try
+                {
+                    BinaryFormatter formatter = new BinaryFormatter();
+
+                    formatter.Serialize(stream, message);
+                    foreach (var slave in slavesIpEndPoints)
+                    {
+                        using (Socket sender = new Socket(ipEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+                        {
+                            sender.Connect(slave.Address, slave.Port);
+                            sender.Send(stream.ToArray());
+                        }
+                    }
+                }
+                catch (SerializationException e)
+                {
+                    Console.WriteLine("Failed to serialize. Reason: " + e.Message);
+                    throw;
+                }
+            }
+
         }
 
         public int GetId()

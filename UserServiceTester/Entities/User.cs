@@ -46,6 +46,11 @@ namespace Entities
         }
         public List<Visa> VisaRecords = new List<Visa>();
 
+        public User()
+        {
+            
+        }
+
         public User(string firstName, string lastName, DateTime dateOfBirth)
         {
             FirstName = firstName;

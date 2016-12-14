@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Text;
 using System.Xml;
+using Entities;
 using Service;
 using Service.IdGenerators;
 using Service.Storages;
+using Service.Validations;
 
 namespace UserServiceTester
 {
@@ -23,8 +25,6 @@ namespace UserServiceTester
             a.VisaRecords.Add(new Visa() { Country = "Belarus", End = DateTime.Now, Start = DateTime.Now });
             a.VisaRecords.Add(new Visa() { Country = "Usa", End = DateTime.Now, Start = DateTime.Now });
             storage.Add(a, new CustomValidation());
-            storage.Add(new User("dazzle", "two", DateTime.Today), new CustomValidation());
-            storage.Add(new User("ivan", "three", DateTime.Today), new CustomValidation());
             storage.Add(new User("dmitry", "four", DateTime.Today), new CustomValidation());*/
 
             while (true)
@@ -38,6 +38,21 @@ namespace UserServiceTester
                         break;
                     case "stop":
                         master.OnStop();
+                        break;
+                    case "add":
+                        master.Add(new User("abrakadabra", "four", DateTime.Today), new CustomValidation());
+                        break;
+                    case "all":
+                        foreach (var user in master.GetAll())
+                        {
+                            Console.WriteLine(user);
+                        }
+                        break;
+                    case "delete1":
+                        master.Delete(1);
+                        break;
+                    case "delete":
+                        master.Delete(new User("dmitry", "four", DateTime.Today));
                         break;
                     default:
                         Console.WriteLine("Wrong command");

@@ -261,12 +261,15 @@ namespace Service
                                 switch (received.Type)
                                 {
                                     case Command.Add:
+                                        Console.WriteLine("Master added new user");
                                         userStorage.Add(received.User);
                                         break;
                                     case Command.DeleteById:
+                                        Console.WriteLine("Master deleted user by id");
                                         userStorage.Delete(received.User.Id);
                                         break;
                                     case Command.DeleteByUser:
+                                        Console.WriteLine("Master deleted user");
                                         userStorage.Delete(received.User);
                                         break;
                                     default:

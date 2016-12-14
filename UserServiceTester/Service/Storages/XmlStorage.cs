@@ -65,14 +65,29 @@ namespace Service.Storages
         {
             XDocument xmlXDocument = XDocument.Load(filePath);
 
-            xmlXDocument.Root.Elements("user").FirstOrDefault(element => element.Element("id").Value == id.ToString()).Remove();
+            XElement found =
+                xmlXDocument.Root.Elements("user")
+                    .FirstOrDefault(element => element.Element("id").Value == id.ToString());
+
+            found?.Remove();
 
             xmlXDocument.Save(filePath);
         }
 
         public void Delete(User user)
         {
-            throw new NotImplementedException();
+            XDocument xmlXDocument = XDocument.Load(filePath);
+
+            var found = xmlXDocument.Root.Elements("user").Select(elem => new User(
+                elem.Element("firstname").Value, elem.Element("lastname").Value,
+                DateTime.Parse(elem.Element("birthday").Value), Convert.ToInt32(elem.Element("id").Value))
+                ).FirstOrDefault(element => element.Equals(user));
+
+            xmlXDocument.Save(filePath);
+            if (found != null)
+            {
+                Delete(found.Id);
+            }
         }
 
         public User Search(Func<User, bool> criteria)

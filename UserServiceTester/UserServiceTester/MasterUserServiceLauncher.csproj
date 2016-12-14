@@ -54,6 +54,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Entities\Entities.csproj">
+      <Project>{03944aad-d8d0-478a-84e6-51d97e860111}</Project>
+      <Name>Entities</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Service\Service.csproj">
       <Project>{d112bb01-c36b-4d50-a5d4-1e603f2280fc}</Project>
       <Name>Service</Name>
